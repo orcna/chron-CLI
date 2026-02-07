@@ -14,6 +14,11 @@ from chron.storage import Storage, StorageError
 storage = Storage()
 tracker = Tracker(storage)
 
+def fmt(seconds: int) -> str:
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    return f"{h}h {m}m"
+
 def cmd_start(args):
     try:
         s = tracker.start(args.activity)
@@ -105,6 +110,9 @@ def build_parser():
     p_note = sub.add_parser("note")
     p_note.add_argument("text")
     p_note.set_defaults(func=cmd_note)
+
+    p_fullsum = sub.add_parser("fullsum")
+    p_fullsum.set_defaults(func=cmd_fullsum)
 
     # default: chron log  → today
     p_log.set_defaults(func=cmd_log)
@@ -262,6 +270,40 @@ def cmd_friction_weekly(args):
     print("⚠ friction (last 7 days):")
     for k, v in sorted(data.items(), key=lambda x: x[1], reverse=True):
         print(f"- {k}: {v}")
+
+def cmd_fullsum(args):
+    data = tracker.fullsum_weekly()
+
+    print("📊 FULL SUMMARY (last 7 days)\n")
+
+    # TIME
+    print("⏱ Time")
+    print(f"- total      : {fmt(data['time']['total'])}")
+
+    for act, sec in sorted(
+        data["time"]["by_activity"].items(),
+        key=lambda x: x[1],
+        reverse=True,
+    ):
+        print(f"- {act:<10}: {fmt(sec)}")
+
+    # FRICTION
+    if data["friction"]:
+        print("\n⚠ Friction")
+        for k, v in data["friction"].items():
+            print(f"- {k:<10}: {v}")
+
+    # HABITS
+    if data["habits"]:
+        print("\n🔁 Habits")
+        for k, v in data["habits"].items():
+            if k in ("spend", "money", "expense"):
+                print(f"- {k:<10}: ₺{v}")
+            else:
+                print(f"- {k:<10}: {v}")
+
+    # NOTES
+    print(f"\n📝 Notes\n- {data['notes_count']} day notes")
 
 def main():
     args = build_parser().parse_args()

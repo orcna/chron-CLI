@@ -210,3 +210,44 @@ class Tracker:
             "date": today,
             "text": text
         }
+    def fullsum_weekly(self):
+        today = date.today()
+        start = today - timedelta(days=6)
+
+        # ---- TIME ----
+        time_totals = defaultdict(int)
+        total_seconds = 0
+
+        logs = self.storage.load_logs()  # sende adı load_log ise onu değiştir
+        for s in logs:
+            d = date.fromisoformat(s["start"][:10])
+            if start <= d <= today:
+                start_dt = datetime.fromisoformat(s["start"])
+                end_dt = datetime.fromisoformat(s["end"])
+                dur = int((end_dt - start_dt).total_seconds())
+
+                time_totals[s["activity"]] += dur
+                total_seconds += dur
+
+        # ---- FRICTION ----
+        friction = self.friction_weekly()
+
+        # ---- HABITS ----
+        habits = self.habit_summary_weekly()
+
+        # ---- NOTES ----
+        notes = self.storage.load_notes()
+        note_days = [
+            d for d in notes.keys()
+            if start <= date.fromisoformat(d) <= today
+        ]
+
+        return {
+            "time": {
+                "total": total_seconds,
+                "by_activity": dict(time_totals),
+            },
+            "friction": friction,
+            "habits": habits,
+            "notes_count": len(note_days),
+        }
