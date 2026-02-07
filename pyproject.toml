@@ -1,0 +1,8 @@
+[project]
+name = "chron"
+version = "0.1.0"
+description = "output-based time tracker"
+requires-python = ">=3.9"
+
+[project.scripts]
+chron = "chron.cli:main"
